@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"github.com/abutahshin/students-api/internal/config"
+	"github.com/abutahshin/students-api/internal/http/handlers/student"
+	"github.com/abutahshin/students-api/internal/storage/sqlite"
 	"log"
 	"log/slog"
 	"net/http"
@@ -17,11 +19,19 @@ func main() {
 	cfg := config.MustLoad()
 
 	// database setup
+
+	storage, err := sqlite.New(cfg)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	slog.Info("storage initialized", slog.String("env", cfg.Env), slog.String("version", "1.0.0"))
+
 	// setup router
 	router := http.NewServeMux()
-	router.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Welcome to Students API"))
-	})
+	router.HandleFunc("POST /api/students", student.New(storage))
+
+	router.HandleFunc("GET /api/students/{id}", student.GetById(storage))
 	// setup server
 
 	server := http.Server{
@@ -49,7 +59,7 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 
 	defer cancel()
-	err := server.Shutdown(ctx)
+	err = server.Shutdown(ctx)
 
 	if err != nil {
 		slog.Error("Failed to shutdown server gracefully:", slog.String("error", err.Error()))
