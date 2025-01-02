@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/abutahshin/students-api/internal/storage"
+	_ "github.com/abutahshin/students-api/internal/storage/sqlite"
 	"github.com/abutahshin/students-api/internal/types"
 	"github.com/abutahshin/students-api/internal/utils/response"
 	"github.com/go-playground/validator/v10"
@@ -72,5 +73,17 @@ func GetById(storage storage.Storage) http.HandlerFunc {
 			return
 		}
 		response.WriteJson(w, http.StatusOK, student)
+	}
+}
+func GetList(storage storage.Storage) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		slog.Info("Getting students")
+
+		students, err := storage.GetStudent()
+		if err != nil {
+			response.WriteJson(w, http.StatusInternalServerError, err)
+			return
+		}
+		response.WriteJson(w, http.StatusOK, students)
 	}
 }
